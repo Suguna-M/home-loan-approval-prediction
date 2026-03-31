@@ -9,17 +9,65 @@ from sklearn.ensemble import RandomForestClassifier
 from database import create_table, insert_application, get_all_data
 
 # -----------------------------
+# SIMPLE LOGIN SYSTEM
+# -----------------------------
+users = {
+    "admin": {"password": "admin123", "role": "Admin"},
+    "officer": {"password": "officer123", "role": "Loan Officer"},
+    "user": {"password": "user123", "role": "Applicant"}
+}
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.title("🔐 Login")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username in users and users[username]["password"] == password:
+            st.session_state.logged_in = True
+            st.session_state.role = users[username]["role"]
+            st.success("Login successful")
+            st.rerun()
+        else:
+            st.error("Invalid credentials")
+
+    st.stop()
+
+# -----------------------------
 # PAGE CONFIG
 # -----------------------------
 st.set_page_config(page_title="Home Loan System", layout="wide")
 st.title("🏦 Home Loan Approval Prediction System")
+
+# 🔹 THEME TOGGLE (ADDED)
+theme = st.toggle("🌙 Dark Mode")
+
+if theme:
+    st.markdown(
+        """
+        <style>
+        body {background-color: #0E1117; color: white;}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 create_table()
 
 # -----------------------------
 # ROLE SELECTOR
 # -----------------------------
-role = st.sidebar.selectbox("Select Role", ["Applicant", "Loan Officer", "Admin"])
+role = st.session_state.role
+st.sidebar.success(f"Logged in as: {role}")
+
+# 🔹 LOGOUT BUTTON (ADDED)
+if st.sidebar.button("Logout"):
+    st.session_state.logged_in = False
+    st.rerun()
 
 # -----------------------------
 # LOAD DATA
@@ -154,6 +202,25 @@ if role == "Applicant":
             if fraud_flag == 1:
                 st.error("🚨 Potential Fraud Detected")
 
+            # ✅ DOWNLOAD REPORT (ADDED)
+            report = f"""
+Loan Prediction Report
+
+Prediction: {"Approved" if prediction[0]==1 else "Rejected"}
+Risk Level: {risk_level}
+
+Applicant Income: {app_income}
+Loan Amount: {loan_amount}
+Credit History: {credit_history}
+"""
+
+            st.download_button(
+                label="📄 Download Report",
+                data=report,
+                file_name="loan_report.txt",
+                mime="text/plain"
+            )
+
             # ✅ SAVE TO DATABASE
             insert_application((
                 gender, married, dependents, education, self_employed,
@@ -192,7 +259,6 @@ elif role == "Admin":
     st.bar_chart(df["Risk_Score"])
     st.line_chart(df["ApplicantIncome"].head(100))
 
-    # ✅ DATABASE VIEW
     st.subheader("📄 Stored Applications")
 
     data = get_all_data()
