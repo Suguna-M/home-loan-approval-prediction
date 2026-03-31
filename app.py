@@ -251,19 +251,31 @@ elif role == "Admin":
 
     st.header("⚙️ Admin Dashboard")
 
-    st.metric("Total Applications", len(df))
-    st.metric("Fraud Cases", df["Fraud_Flag"].sum())
-    st.metric("Approval Rate", f"{df['Loan_Status'].mean()*100:.2f}%")
-
-    st.bar_chart(df["Loan_Status"].value_counts())
-    st.bar_chart(df["Risk_Score"])
-    st.line_chart(df["ApplicantIncome"].head(100))
-
-    st.subheader("📄 Stored Applications")
-
+    # ✅ GET DATABASE DATA
     data = get_all_data()
 
     if data:
-        st.dataframe(pd.DataFrame(data))
+        df_db = pd.DataFrame(data, columns=[
+            "ID","Gender","Married","Dependents","Education","Self_Employed",
+            "ApplicantIncome","CoapplicantIncome","LoanAmount","LoanTerm",
+            "PropertyArea","IncomeStability","CreditHistory",
+            "Prediction","RiskLevel","FraudFlag"
+        ])
+
+        # Metrics
+        st.metric("Total Applications", len(df_db))
+        st.metric("Fraud Cases", df_db["FraudFlag"].sum())
+        st.metric("Approval Rate", f"{df_db['Prediction'].mean()*100:.2f}%")
+
+        # Charts
+        st.subheader("Loan Status Distribution")
+        st.bar_chart(df_db["Prediction"].value_counts())
+
+        st.subheader("Risk Level Distribution")
+        st.bar_chart(df_db["RiskLevel"].value_counts())
+
+        st.subheader("Stored Applications")
+        st.dataframe(df_db)
+
     else:
-        st.write("No records yet")
+        st.warning("No applications submitted yet")
