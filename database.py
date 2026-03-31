@@ -7,6 +7,8 @@ def create_table():
     conn = create_connection()
     cursor = conn.cursor()
 
+    cursor.execute("DROP TABLE IF EXISTS applications")
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS applications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
