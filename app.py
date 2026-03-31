@@ -84,12 +84,14 @@ if role == "Applicant":
         self_employed = st.selectbox("Self Employed", ["Yes", "No"])
         property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-    app_income = st.number_input("Applicant Income")
-    co_income = st.number_input("Coapplicant Income")
-    loan_amount = st.number_input("Loan Amount")
-    loan_term = st.number_input("Loan Term")
-    credit_history = st.selectbox("Credit History", [1.0, 0.0])
-    fraud_flag = st.selectbox("Fraud Flag", [0, 1])
+    app_income = st.number_input("Applicant Income", min_value=0.0)
+    co_income = st.number_input("Coapplicant Income", min_value=0.0)
+    loan_amount = st.number_input("Loan Amount", min_value=0.0)
+    loan_term = st.number_input("Loan Term", min_value=1.0)
+
+    # Improved Credit History (User-friendly)
+    credit_history = st.selectbox("Do you have good credit history?", ["Yes", "No"])
+    credit_history = 1 if credit_history == "Yes" else 0
 
     # Encoding
     gender = 1 if gender == "Male" else 0
@@ -106,15 +108,23 @@ if role == "Applicant":
     income_stability = 0 if self_employed == 1 else 1
 
     # -----------------------------
-    # ELIGIBILITY RULES
+    # FRAUD DETECTION (AUTO)
+    # -----------------------------
+    fraud_flag = 0
+
+    if app_income > 20000 and loan_amount < 50:
+        fraud_flag = 1
+    if credit_history == 0 and loan_amount > 300:
+        fraud_flag = 1
+
+    # -----------------------------
+    # BUTTON
     # -----------------------------
     if st.button("Check Eligibility & Predict"):
 
+        # Eligibility rules
         if total_income < 2000:
             st.error("❌ Rejected: Income too low")
-        elif credit_history == 0:
-            st.warning("⚠️ Poor Credit History → High Risk")
-
         else:
             features_input = np.array([[gender, married, dependents, education,
                                         self_employed, app_income, co_income,
@@ -123,12 +133,9 @@ if role == "Applicant":
 
             prediction = pipeline.predict(features_input)
 
-            # -----------------------------
-            # RISK SCORE
-            # -----------------------------
+            # Risk Score
             risk_score = (1 - credit_history)*0.5 + dti*0.3 + fraud_flag*0.2
 
-            # Risk Level
             if risk_score < 0.02:
                 risk_level = "Low"
             elif risk_score < 0.05:
@@ -145,15 +152,11 @@ if role == "Applicant":
 
             st.write(f"⚠️ Risk Level: {risk_level}")
 
-            # -----------------------------
-            # FRAUD DETECTION
-            # -----------------------------
-            if fraud_flag == 1 or (app_income > 15000 and loan_amount < 50):
+            # Fraud Warning
+            if fraud_flag == 1:
                 st.error("🚨 Potential Fraud Detected")
 
-            # -----------------------------
-            # LOAN RECOMMENDATION
-            # -----------------------------
+            # Recommendation
             st.subheader("💡 Recommendation")
 
             if risk_level == "Low":
@@ -172,26 +175,24 @@ elif role == "Loan Officer":
 
     df_dash = df.copy()
 
-    df_dash["Credit_History"] = df_dash["Credit_History"].apply(lambda x: 1 if x >= 0.5 else 0)
-
     st.metric("Approval Rate", f"{df_dash['Loan_Status'].mean()*100:.2f}%")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Risk Score Distribution")
-        st.bar_chart(df_dash["Risk_Score"])
+        st.subheader("Loan Status Distribution")
+        st.bar_chart(df_dash["Loan_Status"].value_counts())
 
     with col2:
-        st.subheader("Fraud vs Approval")
-        st.bar_chart(pd.crosstab(df_dash["Fraud_Flag"], df_dash["Loan_Status"]))
+        st.subheader("Fraud Cases")
+        st.bar_chart(df_dash["Fraud_Flag"].value_counts())
 
     st.subheader("Property Area vs Approval")
     st.bar_chart(pd.crosstab(df_dash["Property_Area"], df_dash["Loan_Status"]))
 
     st.subheader("Insights")
-    st.write("✔ High risk → manual review")
-    st.write("✔ Fraud cases should be investigated")
+    st.write("✔ High risk applications should be reviewed manually")
+    st.write("✔ Fraud cases need investigation")
 
 # ============================================================
 # ⚙️ ADMIN
@@ -209,12 +210,13 @@ elif role == "Admin":
     st.subheader("Loan Status Distribution")
     st.bar_chart(df["Loan_Status"].value_counts())
 
-    st.subheader("Risk Score Distribution")
-    st.bar_chart(df["Risk_Score"])
-
     st.subheader("Income Trend")
     st.line_chart(df["ApplicantIncome"].head(100))
 
+    st.subheader("Risk Score Distribution")
+    if "Risk_Score" in df.columns:
+        st.bar_chart(df["Risk_Score"])
+
     st.subheader("Insights")
-    st.write("✔ System working efficiently")
-    st.write("✔ Monitor fraud regularly")
+    st.write("✔ Monitor approval trends")
+    st.write("✔ Track fraud patterns")
