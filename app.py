@@ -247,75 +247,58 @@ elif role == "Loan Officer":
 # ============================================================
 # ⚙️ ADMIN (FINAL CORRECT VERSION)
 # ============================================================
+# ============================================================
+# ⚙️ ADMIN (CSV DASHBOARD ONLY)
+# ============================================================
 elif role == "Admin":
 
     st.header("⚙️ Admin Dashboard")
 
     # -----------------------------
-    # LOAD DATABASE DATA
+    # METRICS (FROM CSV)
     # -----------------------------
-    data = get_all_data()
+    col1, col2, col3 = st.columns(3)
 
-    if data:
-        df_db = pd.DataFrame(data, columns=[
-            "ID","Gender","Married","Dependents","Education","Self_Employed",
-            "ApplicantIncome","CoapplicantIncome","LoanAmount","LoanTerm",
-            "PropertyArea","IncomeStability","CreditHistory",
-            "Prediction","RiskLevel","FraudFlag"
-        ])
+    col1.metric("Total Applications", len(df))
+    col2.metric("Fraud Cases", df["Fraud_Flag"].sum())
+    col3.metric("Approval Rate", f"{df['Loan_Status'].mean()*100:.2f}%")
 
-        # -----------------------------
-        # METRICS
-        # -----------------------------
-        col1, col2, col3 = st.columns(3)
+    # -----------------------------
+    # CHARTS
+    # -----------------------------
 
-        col1.metric("Total Applications", len(df_db))
-        col2.metric("Fraud Cases", df_db["FraudFlag"].sum())
-        col3.metric("Approval Rate", f"{df_db['Prediction'].mean()*100:.2f}%")
+    st.subheader("📊 Loan Status Distribution")
+    st.bar_chart(df["Loan_Status"].value_counts())
 
-        # -----------------------------
-        # CHARTS (FROM DATABASE)
-        # -----------------------------
-        st.subheader("📊 Loan Status Distribution")
-        st.bar_chart(df_db["Prediction"].value_counts())
-
-        st.subheader("📊 Risk Level Distribution")
-        st.bar_chart(df_db["RiskLevel"].value_counts())
-
-        st.subheader("📊 Fraud Distribution")
-        st.bar_chart(df_db["FraudFlag"].value_counts())
-
-        st.subheader("📊 Property Area Distribution")
-        st.bar_chart(df_db["PropertyArea"].value_counts())
-
-        # -----------------------------
-        # OPTIONAL: OLD CSV CHARTS
-        # -----------------------------
-        st.subheader("📊 Historical Dataset (CSV)")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.write("Loan Status (CSV)")
-            st.bar_chart(df["Loan_Status"].value_counts())
-
-        with col2:
-            st.write("Income Trend (CSV)")
-            st.line_chart(df["ApplicantIncome"].head(100))
-
-        # -----------------------------
-        # TABLE VIEW
-        # -----------------------------
-        st.subheader("📄 Stored Applications")
-        st.dataframe(df_db)
-
-        # -----------------------------
-        # INSIGHTS
-        # -----------------------------
-        st.subheader("📊 Insights")
-        st.write("✔ High Risk → Needs manual review")
-        st.write("✔ Fraud cases → Investigate immediately")
-        st.write("✔ Monitor approval trends regularly")
-
+    st.subheader("📊 Risk Score Distribution")
+    if "Risk_Score" in df.columns:
+        st.bar_chart(df["Risk_Score"])
     else:
-        st.warning("No applications submitted yet")
+        st.warning("Risk_Score column not found in dataset")
+
+    st.subheader("📊 Fraud vs Loan Approval")
+    if "Fraud_Flag" in df.columns:
+        st.bar_chart(pd.crosstab(df["Fraud_Flag"], df["Loan_Status"]))
+    else:
+        st.warning("Fraud_Flag column not found")
+
+    st.subheader("📊 Property Area vs Approval")
+    st.bar_chart(pd.crosstab(df["Property_Area"], df["Loan_Status"]))
+
+    st.subheader("📈 Income Trend")
+    st.line_chart(df["ApplicantIncome"].head(100))
+
+    # -----------------------------
+    # INSIGHTS
+    # -----------------------------
+    st.subheader("📊 Insights")
+
+    st.write("✔ High credit history → higher approval")
+    st.write("✔ High income → lower risk")
+    st.write("✔ Fraud cases should be manually reviewed")
+
+    # -----------------------------
+    # OPTIONAL: SHOW DATA
+    # -----------------------------
+    st.subheader("📄 Dataset Preview")
+    st.dataframe(df.head(50))
