@@ -245,13 +245,15 @@ elif role == "Loan Officer":
     st.bar_chart(pd.crosstab(df["Property_Area"], df["Loan_Status"]))
 
 # ============================================================
-# ⚙️ ADMIN (UNCHANGED + DB VIEW)
+# ⚙️ ADMIN (FINAL CORRECT VERSION)
 # ============================================================
 elif role == "Admin":
 
     st.header("⚙️ Admin Dashboard")
 
-    # ✅ GET DATABASE DATA
+    # -----------------------------
+    # LOAD DATABASE DATA
+    # -----------------------------
     data = get_all_data()
 
     if data:
@@ -262,20 +264,58 @@ elif role == "Admin":
             "Prediction","RiskLevel","FraudFlag"
         ])
 
-        # Metrics
-        st.metric("Total Applications", len(df_db))
-        st.metric("Fraud Cases", df_db["FraudFlag"].sum())
-        st.metric("Approval Rate", f"{df_db['Prediction'].mean()*100:.2f}%")
+        # -----------------------------
+        # METRICS
+        # -----------------------------
+        col1, col2, col3 = st.columns(3)
 
-        # Charts
-        st.subheader("Loan Status Distribution")
+        col1.metric("Total Applications", len(df_db))
+        col2.metric("Fraud Cases", df_db["FraudFlag"].sum())
+        col3.metric("Approval Rate", f"{df_db['Prediction'].mean()*100:.2f}%")
+
+        # -----------------------------
+        # CHARTS (FROM DATABASE)
+        # -----------------------------
+        st.subheader("📊 Loan Status Distribution")
         st.bar_chart(df_db["Prediction"].value_counts())
 
-        st.subheader("Risk Level Distribution")
+        st.subheader("📊 Risk Level Distribution")
         st.bar_chart(df_db["RiskLevel"].value_counts())
 
-        st.subheader("Stored Applications")
+        st.subheader("📊 Fraud Distribution")
+        st.bar_chart(df_db["FraudFlag"].value_counts())
+
+        st.subheader("📊 Property Area Distribution")
+        st.bar_chart(df_db["PropertyArea"].value_counts())
+
+        # -----------------------------
+        # OPTIONAL: OLD CSV CHARTS
+        # -----------------------------
+        st.subheader("📊 Historical Dataset (CSV)")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write("Loan Status (CSV)")
+            st.bar_chart(df["Loan_Status"].value_counts())
+
+        with col2:
+            st.write("Income Trend (CSV)")
+            st.line_chart(df["ApplicantIncome"].head(100))
+
+        # -----------------------------
+        # TABLE VIEW
+        # -----------------------------
+        st.subheader("📄 Stored Applications")
         st.dataframe(df_db)
+
+        # -----------------------------
+        # INSIGHTS
+        # -----------------------------
+        st.subheader("📊 Insights")
+        st.write("✔ High Risk → Needs manual review")
+        st.write("✔ Fraud cases → Investigate immediately")
+        st.write("✔ Monitor approval trends regularly")
 
     else:
         st.warning("No applications submitted yet")
