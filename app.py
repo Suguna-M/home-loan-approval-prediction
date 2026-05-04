@@ -41,6 +41,40 @@ if not st.session_state.logged_in:
 # PAGE CONFIG
 # -----------------------------
 st.set_page_config(page_title="Home Loan System", layout="wide")
+st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(to right, #1e3c72, #2a5298);
+        color: white;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #111827;
+    }
+
+    .stButton>button {
+        background-color: #2563eb;
+        color: white;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .stTextInput>div>div>input,
+    .stNumberInput input {
+        background-color: #1f2937;
+        color: white;
+    }
+
+    .stSelectbox div {
+        background-color: #1f2937;
+        color: white;
+    }
+
+    h1, h2, h3, h4 {
+        color: #f9fafb;
+    }
+    </style>
+""", unsafe_allow_html=True)
 st.title("🏦 Home Loan Approval Prediction System")
 
 # 🔹 THEME TOGGLE (ADDED)
